@@ -1,9 +1,11 @@
 import pandas as pd
+from openpyxl.styles import Font, PatternFill, Alignment
 
 
 def gerar_excel(dados, caminho_saida):
     """
-    Gera a planilha Excel com os dados extraídos.
+    Gera a planilha Excel com os dados extraídos,
+    incluindo totalizador de Total e Valor Pago.
     """
 
     if not dados:
@@ -47,6 +49,46 @@ def gerar_excel(dados, caminho_saida):
             ws.cell(row=row, column=coluna_documento).number_format = "@"
             ws.cell(row=row, column=coluna_codigo).number_format = "@"
 
+        # Colunas para totalização
+        coluna_total = colunas.index("total_recolher") + 1
+        coluna_valor_pago = colunas.index("valor_pago") + 1
+
+        linha_total = ws.max_row + 1
+
+        # Rótulo do totalizador
+        ws.cell(row=linha_total, column=1).value = "TOTAL GERAL"
+
+        # Fórmulas de soma
+        ws.cell(row=linha_total, column=coluna_total).value = (
+            f"=SUM({ws.cell(row=2, column=coluna_total).coordinate}:"
+            f"{ws.cell(row=linha_total - 1, column=coluna_total).coordinate})"
+        )
+
+        ws.cell(row=linha_total, column=coluna_valor_pago).value = (
+            f"=SUM({ws.cell(row=2, column=coluna_valor_pago).coordinate}:"
+            f"{ws.cell(row=linha_total - 1, column=coluna_valor_pago).coordinate})"
+        )
+
+        # Formatação da linha de total
+        fill_total = PatternFill(
+            start_color="D9EAD3",
+            end_color="D9EAD3",
+            fill_type="solid"
+        )
+
+        fonte_total = Font(bold=True)
+
+        for col in range(1, len(colunas) + 1):
+            celula = ws.cell(row=linha_total, column=col)
+            celula.font = fonte_total
+            celula.fill = fill_total
+            celula.alignment = Alignment(horizontal="center")
+
+        # Formatação numérica das colunas de valores
+        for row in range(2, linha_total + 1):
+            ws.cell(row=row, column=coluna_total).number_format = '#,##0.00'
+            ws.cell(row=row, column=coluna_valor_pago).number_format = '#,##0.00'
+
         # Largura das colunas
         larguras = {
             "A": 24,
@@ -62,3 +104,7 @@ def gerar_excel(dados, caminho_saida):
 
         for coluna, largura in larguras.items():
             ws.column_dimensions[coluna].width = largura
+
+
+# Compatibilidade com o main.py
+exportar_excel = gerar_excel
